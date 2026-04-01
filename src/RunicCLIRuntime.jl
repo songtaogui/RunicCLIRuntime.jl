@@ -6,13 +6,14 @@ using TOML
 
 export ArgParseError, ArgHelpRequested, ArgHelpTemplate
 export ArgDef, SubcommandDef, CliDef
-export ArgRequiresDef, ArgConflictsDef
+export ArgRequiresDef, ArgConflictsDef, ArgGroupDef
 export ArgKind, AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI, AK_POS_REQUIRED, AK_POS_OPTIONAL, AK_POS_REST
 
 export HelpStyle, HELP_PLAIN, HELP_COLORED
 export HelpLabelStyle, HLS_HIDDEN, HLS_PLAIN, HLS_BOLD, HLS_COLORED
 export HelpTheme, HelpFormatOptions, HelpTemplateOptions, build_help_template
 
+export clidef, CLIDEFREGISTRY
 export parse_cli, run_cli, render_help, default_help_template, colored_help_template
 export load_config_file, merge_cli_sources, generate_completion
 export generate_default_config, save_default_config

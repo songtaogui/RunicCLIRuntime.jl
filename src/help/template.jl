@@ -114,7 +114,8 @@ function build_help_template(options::HelpTemplateOptions)
             opts.section_gap && println(io)
         end,
         section_positionals = (io, def, path)->begin
-            pos = filter(a -> a.kind in (AK_POS_REQUIRED, AK_POS_OPTIONAL, AK_POS_REST), def.args)
+            grouped = _arg_group_membership(def)
+            pos = filter(a -> a.kind in (AK_POS_REQUIRED, AK_POS_OPTIONAL, AK_POS_REST) && !haskey(grouped, a.name), def.args)
             isempty(pos) && return
 
             _paint(io, opts.title_positionals, theme.section_title, color_enabled, theme.reset)
@@ -129,7 +130,8 @@ function build_help_template(options::HelpTemplateOptions)
             opts.section_gap && println(io)
         end,
         section_options = (io, def, path)->begin
-            opt = filter(a -> a.kind in (AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI), def.args)
+            grouped = _arg_group_membership(def)
+            opt = filter(a -> a.kind in (AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI) && !haskey(grouped, a.name), def.args)
             isempty(opt) && return
 
             _paint(io, opts.title_options, theme.section_title, color_enabled, theme.reset)
@@ -144,6 +146,29 @@ function build_help_template(options::HelpTemplateOptions)
             opts.section_gap && println(io)
         end,
         section_subcommands = (io, def, path)->begin
+            if !isempty(def.arg_groups)
+                for g in def.arg_groups
+                    members = ArgDef[a for a in def.args if a.name in Set(g.members)]
+                    isempty(members) && continue
+
+                    _paint(io, g.title * ":", theme.section_title, color_enabled, theme.reset)
+                    println(io)
+
+                    specs = [
+                        a.kind in (AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI) ?
+                        _format_option_spec(a, opts, theme, color_enabled) :
+                        _format_positional_spec(a, opts, theme, color_enabled)
+                        for a in members
+                    ]
+                    spec_width = _compute_item_column_width(members, specs, opts)
+
+                    for (a, spec) in zip(members, specs)
+                        _render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled)
+                    end
+                    opts.section_gap && println(io)
+                end
+            end
+
             isempty(def.subcommands) && return
             _paint(io, opts.title_subcommands, theme.section_title, color_enabled, theme.reset)
             println(io)
@@ -201,8 +226,6 @@ function build_help_template(options::HelpTemplateOptions)
         end
     )
 end
-
-# build_help_template() = build_help_template(HelpTemplateOptions())
 
 """
     build_help_template(; kwargs...)

@@ -74,7 +74,7 @@ fi
 end
 
 function generate_completion(::Type{T}; shell::Symbol=:bash, prog::String="") where {T}
-    local def = CliDef(T)
+    local def = clidef(T)
     local p = isempty(prog) ? (isempty(def.cmd_name) ? string(T) : def.cmd_name) : prog
     return generate_completion(def; shell=shell, prog=p)
 end

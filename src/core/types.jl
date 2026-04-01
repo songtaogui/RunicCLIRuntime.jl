@@ -136,7 +136,8 @@ determined primarily by `kind`.
   Whether the argument is mandatory under its declaration semantics.
 - `env::Union{Nothing,String}`:
   Whether the argument can fallback to ENV.
-
+- `fallback::Union{Nothing,Symbol}`:
+  Whether the argument can fallback to the final value of another argument.
 # Notes
 
 - For positional kinds, `flags` is usually empty.
@@ -154,6 +155,7 @@ Base.@kwdef struct ArgDef
     help_name::String = ""
     required::Bool = false
     env::Union{Nothing,String}=nothing
+    fallback::Union{Nothing,Symbol}=nothing
 end
 
 """
@@ -216,6 +218,11 @@ Base.@kwdef struct ArgConflictsDef
     targets::Vector{Symbol} = Symbol[]
 end
 
+Base.@kwdef struct ArgGroupDef
+    title::String
+    members::Vector{Symbol} = Symbol[]
+end
+
 """
     SubcommandDef
 
@@ -250,6 +257,8 @@ policy flags used by parsing, dispatch, and help rendering.
   Anchor/targets dependency rules.
 - `arg_conflicts::Vector{ArgConflictsDef}`:
   Anchor/targets conflict rules.
+- `arg_groups::Vector{ArgGroupDef}`:
+  Group arguments for better help display.
 
 # Notes
 
@@ -269,6 +278,7 @@ Base.@kwdef struct SubcommandDef
     mutual_inclusion_groups::Vector{Vector{Symbol}} = Vector{Vector{Symbol}}()
     arg_requires::Vector{ArgRequiresDef} = ArgRequiresDef[]
     arg_conflicts::Vector{ArgConflictsDef} = ArgConflictsDef[]
+    arg_groups::Vector{ArgGroupDef} = ArgGroupDef[]
 end
 
 """
@@ -306,6 +316,8 @@ generation, and parser-side introspection.
   Dependency relations.
 - `arg_conflicts::Vector{ArgConflictsDef}`:
   Conflict relations.
+- `arg_groups::Vector{ArgGroupDef}`:
+  Group arguments for better help display.
 
 # Notes
 
@@ -326,4 +338,28 @@ Base.@kwdef struct CliDef
     mutual_inclusion_groups::Vector{Vector{Symbol}} = Vector{Vector{Symbol}}()
     arg_requires::Vector{ArgRequiresDef} = ArgRequiresDef[]
     arg_conflicts::Vector{ArgConflictsDef} = ArgConflictsDef[]
+    arg_groups::Vector{ArgGroupDef} = ArgGroupDef[]
+end
+
+
+const CLIDEFREGISTRY = IdDict{DataType,CliDef}()
+
+function clidef(::Type{T}) where {T}
+    get(CLIDEFREGISTRY, T, nothing) === nothing &&
+        throw(ArgumentError("no CliDef registered for type $(T)"))
+    return CLIDEFREGISTRY[T]
+end
+
+function clidef(x)
+    return clidef(typeof(x))
+end
+
+function CliDef(::Type{T}) where {T}
+    get(CLIDEFREGISTRY, T, nothing) === nothing &&
+        throw(ArgumentError("no CliDef registered for type $(T)"))
+    return CLIDEFREGISTRY[T]
+end
+
+function CliDef(x)
+    return CliDef(typeof(x))
 end

@@ -122,6 +122,10 @@ function _meta_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color
         push!(parts, "Default: " * String(opts.default_formatter(a.default)))
     end
 
+    if getfield(a, :fallback) !== nothing
+        push!(parts, "Fallback: " * String(a.fallback))
+    end
+
     return parts
 end
 
@@ -176,4 +180,14 @@ function _render_item_inline(io::IO, a::ArgDef, spec::String, spec_width::Int, o
             println(io)
         end
     end
+end
+
+function _arg_group_membership(def::CliDef)
+    belongs = Dict{Symbol,String}()
+    for g in def.arg_groups
+        for s in g.members
+            belongs[s] = g.title
+        end
+    end
+    return belongs
 end
