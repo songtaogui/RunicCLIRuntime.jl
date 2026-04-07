@@ -1,13 +1,15 @@
 name = "RunicCLIRuntime"
 uuid = "2d9a0462-f75e-4e7b-a4a8-2f5f7a313918"
-version = "0.2.1"
+version = "0.2.3"
 authors = ["songtaogui<songtaogui@sina.com>"]
 
 [deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 
 [compat]
+Dates = "1.11.0"
 TOML = "1.0.3"
 TextWrap = "1.0.2"
 julia = "1.11"

@@ -37,7 +37,6 @@ export generate_completion
 
 # ===== source/config_template.jl =====
 export generate_default_config, save_default_config
-
 # ===== utils/validators.jl =====
 export V_AND, V_OR, V_NOT
 
@@ -60,11 +59,17 @@ export V_str_lc, V_str_uc, V_str_trimmed
 export V_path_exists, V_path_absent
 export V_path_isfile, V_path_isdir
 export V_path_readable, V_path_writable
-export V_path_ext
 export V_path_real, V_path_absolute, V_path_relative, V_path_nottraversal
-export V_path_executable, V_path_symlink, V_path_within
-export V_file_readable, V_file_writable, V_file_creatable, V_file_nonempty
+export V_path_executable, V_path_symlink, V_path_nosymlink, V_path_within
+export V_path_nonblank, V_path_ext_in, V_path_basename_match, V_path_basename_only, V_path_maxlen
+
+export V_file_readable, V_file_writable, V_file_executable, V_file_creatable
+export V_file_output_safe, V_file_nonempty, V_file_empty
+export V_file_size_between, V_file_linecount_between
+export V_file_newer_than, V_file_older_than
+
 export V_dir_readable, V_dir_writable, V_dir_contains
+export V_dir_contains_glob, V_dir_creatable, V_dir_empty, V_dir_nonempty
 
 export index_paths_for
 export V_file_has_index, V_file_has_any_index, V_file_has_all_indexes, V_file_has_index_groups

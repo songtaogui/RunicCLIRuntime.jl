@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.12.4"
+julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "00b45d5dfe7bce0d000b340894f6129d577c4753"
+project_hash = "4af30ddc00516f22586b2c0e82f957c4289d1af9"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -13,6 +13,12 @@ version = "1.11.0"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
+
+[[deps.RunicCLIRuntime]]
+deps = ["TOML", "TextWrap"]
+path = "."
+uuid = "2d9a0462-f75e-4e7b-a4a8-2f5f7a313918"
+version = "0.2.3"
 
 [[deps.TOML]]
 deps = ["Dates"]
