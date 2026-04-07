@@ -153,15 +153,64 @@ function _compute_item_column_width(args::Vector{ArgDef}, specs::Vector{String},
     return w
 end
 
-function _render_item_inline(io::IO, a::ArgDef, spec::String, spec_width::Int, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function _render_item_inline(
+    io::IO,
+    a::ArgDef,
+    spec::String,
+    spec_width::Int,
+    opts::HelpFormatOptions,
+    theme::HelpTheme,
+    color_enabled::Bool,
+    wrap_width::Int
+)
     left_pad = " "^opts.indent_item
     desc = _build_inline_description(a, opts, theme, color_enabled)
 
     spec_cell = _rpad_display(spec, spec_width)
     gap = " "^opts.item_desc_gap
 
-    desc_width = opts.wrap_width > 0 ? max(10, opts.wrap_width - opts.indent_item - spec_width - opts.item_desc_gap) : 0
-    desc_lines = isempty(desc) ? String[""] : _wrap_inline_text_lines(desc, desc_width)
+    desc_width = wrap_width > 0 ? max(10, wrap_width - opts.indent_item - spec_width - opts.item_desc_gap) : 0
+
+    raw_parts = split(desc, '\n')
+    desc_lines = String[]
+
+    for p in raw_parts
+        if isempty(p)
+            push!(desc_lines, "")
+            continue
+        end
+
+        if desc_width <= 0
+            push!(desc_lines, p)
+            continue
+        end
+
+        m = match(r"^(\s*)", p)
+        lead = m === nothing ? "" : m.captures[1]
+        rest = p[length(lead)+1:end]
+
+        bullet_m = match(r"^([-*+]\s+)", rest)
+        if bullet_m === nothing
+            prefix = lead
+        else
+            prefix = lead * bullet_m.captures[1]
+        end
+
+        prefix_w = textwidth(prefix)
+
+        wio = IOBuffer()
+        println_wrapped(
+            wio,
+            p;
+            initial_indent = 0,
+            subsequent_indent = prefix_w,
+            width = desc_width
+        )
+        wrapped = split(chomp(String(take!(wio))), '\n')
+        append!(desc_lines, isempty(wrapped) ? [""] : wrapped)
+    end
+
+    isempty(desc_lines) && (desc_lines = [""])
 
     print(io, left_pad)
     _paint(io, spec_cell, _item_style_for_arg(a, theme, opts), color_enabled, theme.reset)
@@ -174,9 +223,11 @@ function _render_item_inline(io::IO, a::ArgDef, spec::String, spec_width::Int, o
 
     if length(desc_lines) > 1
         cont_prefix = left_pad * " "^spec_width * gap
-        for i in 2:length(desc_lines)
+        for desc_line in desc_lines[2:end]
             print(io, cont_prefix)
-            _paint(io, desc_lines[i], theme.inline_description, color_enabled, theme.reset)
+            if !isempty(desc_line)
+                _paint(io, desc_line, theme.inline_description, color_enabled, theme.reset)
+            end
             println(io)
         end
     end

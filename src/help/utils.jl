@@ -32,3 +32,16 @@ function _wrap_inline_text_lines(txt::AbstractString, width::Int)
     isempty(lines) && return [""]
     return lines
 end
+
+@inline function _effective_wrap_width(io::IO, width::Union{Nothing,Int}; fallback::Int=80)
+    if width !== nothing && width > 0
+        return width
+    end
+
+    cols = try
+        displaysize(io)[2]
+    catch
+        0
+    end
+    return cols > 0 ? cols : fallback
+end

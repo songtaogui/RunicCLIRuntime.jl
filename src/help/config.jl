@@ -409,7 +409,7 @@ function HelpFormatOptions(;
     item_desc_gap::Int = 2,
 
     title_usage::String = "Usage:",
-    title_version::String = "Version:",
+    title_version::String = "v",
     title_positionals::String = "Positional Arguments:",
     title_options::String = "Options:",
     title_subcommands::String = "Subcommands:",
@@ -429,7 +429,7 @@ function HelpFormatOptions(;
 
     wrap_description::Bool = true,
     wrap_epilog::Bool = true,
-    wrap_width::Int = 100,
+    wrap_width::Int = 0,
 
     type_formatter = string,
     default_formatter = repr
