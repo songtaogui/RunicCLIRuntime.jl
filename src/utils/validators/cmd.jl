@@ -1,27 +1,33 @@
 """
     V_cmd_inpath()
 
-Return a validator that checks whether command name can be found in `PATH`.
+Return a ValidatorSpec that checks whether command name can be found in `PATH`.
 """
-V_cmd_inpath() = x -> Sys.which(String(x)) !== nothing
+V_cmd_inpath() = ValidatorSpec(
+    "V_cmd_inpath",
+    "Command must be available in PATH",
+    x -> Sys.which(String(x)) !== nothing
+)
 
 """
     V_cmd_executable()
 
-Return a validator that checks whether command name resolves to an executable file.
+Return a ValidatorSpec that checks whether command name resolves to an executable file.
 """
-V_cmd_executable() = x -> begin
-    p = Sys.which(String(x))
-    p !== nothing && isfile(p) && isexecutable(p)
-end
+V_cmd_executable() = ValidatorSpec(
+    "V_cmd_executable",
+    "Command must resolve to an executable in PATH",
+    x -> begin
+        p = Sys.which(String(x))
+        p !== nothing && isfile(p) && isexecutable(p)
+    end
+)
 
-# Internal: parse a version string to VersionNumber-like tuple fallback
 function _cmd_parse_version(s::AbstractString)
     t = strip(s)
     try
         return VersionNumber(t)
     catch
-        # fallback: keep digits/dots only, first chunk
         m = match(r"(\d+(?:\.\d+){0,3})", t)
         m === nothing && return nothing
         try
@@ -32,7 +38,6 @@ function _cmd_parse_version(s::AbstractString)
     end
 end
 
-# Internal: extract version text from command output
 function _cmd_extract_version_text(out::AbstractString, vreg::Regex)
     m = match(vreg, out)
     m === nothing && return nothing
@@ -44,7 +49,6 @@ function _cmd_extract_version_text(out::AbstractString, vreg::Regex)
     return m.match
 end
 
-# Internal: run command and capture version
 function _cmd_get_version(cmdname::AbstractString; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})")
     cpath = Sys.which(cmdname)
     cpath === nothing && return nothing
@@ -53,7 +57,6 @@ function _cmd_get_version(cmdname::AbstractString; vcmd::AbstractString="--versi
     out = try
         read(full, String)
     catch
-        # some commands print version to stderr
         try
             read(pipeline(full, stderr=IOBuffer()), String)
         catch
@@ -66,18 +69,41 @@ function _cmd_get_version(cmdname::AbstractString; vcmd::AbstractString="--versi
 end
 
 function _cmd_version_cmp(op::Function, v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})")
-    want = try VersionNumber(string(v)) catch; return _ -> false end
-    return x -> begin
-        got = _cmd_get_version(String(x); vcmd=vcmd, vreg=vreg)
-        got === nothing && return false
-        op(got, want)
+    want = try
+        VersionNumber(string(v))
+    catch
+        return ValidatorSpec("V_cmd_version_cmp", "Target command version is invalid", _ -> false)
     end
+
+    opname = op === (>=) ? ">=" :
+             op === (<=) ? "<=" :
+             op === (==) ? "==" :
+             op === (>)  ? ">"  :
+             op === (<)  ? "<"  : "comparison"
+
+    vname = op === (>=) ? "V_cmd_version_ge" :
+            op === (<=) ? "V_cmd_version_le" :
+            op === (==) ? "V_cmd_version_eq" :
+            op === (>)  ? "V_cmd_version_gt" :
+            op === (<)  ? "V_cmd_version_lt" :
+            "V_cmd_version_cmp"
+
+    msg = "Command version must be $opname " * string(want)
+    return ValidatorSpec(
+        vname,
+        msg,
+        x -> begin
+            got = _cmd_get_version(String(x); vcmd=vcmd, vreg=vreg)
+            got === nothing && return false
+            op(got, want)
+        end
+    )
 end
 
 """
     V_cmd_version_ge(v; vcmd="--version", vreg=r"(\\d+(?:\\.\\d+){0,3})")
 
-Return a validator that checks command version `>= v`.
+Return a ValidatorSpec that checks command version `>= v`.
 """
 V_cmd_version_ge(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})") =
     _cmd_version_cmp(>=, v; vcmd=vcmd, vreg=vreg)
@@ -85,7 +111,7 @@ V_cmd_version_ge(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+
 """
     V_cmd_version_le(v; vcmd="--version", vreg=r"(\\d+(?:\\.\\d+){0,3})")
 
-Return a validator that checks command version `<= v`.
+Return a ValidatorSpec that checks command version `<= v`.
 """
 V_cmd_version_le(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})") =
     _cmd_version_cmp(<=, v; vcmd=vcmd, vreg=vreg)
@@ -93,7 +119,7 @@ V_cmd_version_le(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+
 """
     V_cmd_version_eq(v; vcmd="--version", vreg=r"(\\d+(?:\\.\\d+){0,3})")
 
-Return a validator that checks command version `== v`.
+Return a ValidatorSpec that checks command version `== v`.
 """
 V_cmd_version_eq(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})") =
     _cmd_version_cmp(==, v; vcmd=vcmd, vreg=vreg)
@@ -101,7 +127,7 @@ V_cmd_version_eq(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+
 """
     V_cmd_version_gt(v; vcmd="--version", vreg=r"(\\d+(?:\\.\\d+){0,3})")
 
-Return a validator that checks command version `> v`.
+Return a ValidatorSpec that checks command version `> v`.
 """
 V_cmd_version_gt(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})") =
     _cmd_version_cmp(>, v; vcmd=vcmd, vreg=vreg)
@@ -109,7 +135,7 @@ V_cmd_version_gt(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+
 """
     V_cmd_version_lt(v; vcmd="--version", vreg=r"(\\d+(?:\\.\\d+){0,3})")
 
-Return a validator that checks command version `< v`.
+Return a ValidatorSpec that checks command version `< v`.
 """
 V_cmd_version_lt(v; vcmd::AbstractString="--version", vreg::Regex=r"(\d+(?:\.\d+){0,3})") =
     _cmd_version_cmp(<, v; vcmd=vcmd, vreg=vreg)

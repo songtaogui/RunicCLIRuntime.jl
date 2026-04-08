@@ -38,6 +38,8 @@ export generate_completion
 # ===== source/config_template.jl =====
 export generate_default_config, save_default_config
 # ===== utils/validators.jl =====
+export ValidatorSpec
+export validator, validator_fn, validator_message, validator_name, validator_resolve_message
 export V_AND, V_OR, V_NOT
 
 export V_num_min, V_num_max, V_num_range
@@ -73,9 +75,9 @@ export V_dir_contains_glob, V_dir_creatable, V_dir_empty, V_dir_nonempty
 
 export index_paths_for
 export V_file_has_index, V_file_has_any_index, V_file_has_all_indexes, V_file_has_index_groups
-export V_file_bioidx_fa, V_file_bioidx_gvcf, V_file_bioidx_xam, V_file_bioidx_csi
-export V_file_bioidx_blastdb, V_file_bioidx_hisat2, V_file_bioidx_star, V_file_bioidx_diamond
-export V_file_bioidx_bowtie2, V_file_bioidx_bwa, V_file_bioidx_salmon, V_file_bioidx_kallisto
+export V_bioidx_fa, V_bioidx_gvcf, V_bioidx_xam, V_bioidx_csi
+export V_bioidx_blastdb, V_bioidx_hisat2, V_bioidx_star, V_bioidx_diamond
+export V_bioidx_bowtie2, V_bioidx_bwa, V_bioidx_salmon, V_bioidx_kallisto
 
 export V_cmd_inpath, V_cmd_executable
 export V_cmd_version_ge, V_cmd_version_le, V_cmd_version_eq, V_cmd_version_gt, V_cmd_version_lt

@@ -63,7 +63,7 @@ end
 """
     V_file_has_index(; suffixes=String[], replace_ext=String[], mode=:any, strip_all_ext=false, in_dir=nothing, require_readable=true)
 
-Return a validator checking index file existence strategy for a data file.
+Return a ValidatorSpec checking index file existence strategy for a data file.
 
 `mode` supports:
 - `:any`
@@ -78,17 +78,31 @@ function V_file_has_index(;
     in_dir=nothing,
     require_readable::Bool=true
 )
-    return x -> begin
-        f = String(x)
-        cands = index_paths_for(f;
-            suffixes=suffixes,
-            replace_ext=replace_ext,
-            strip_all_ext=strip_all_ext,
-            in_dir=in_dir
-        )
-        isempty(cands) && return false
-        _index_mode_ok(cands, mode; require_readable=require_readable)
-    end
+    desc = String[]
+    !isempty(suffixes) && push!(desc, "suffixes=" * repr(suffixes))
+    !isempty(replace_ext) && push!(desc, "replace_ext=" * repr(replace_ext))
+    push!(desc, "mode=" * repr(mode))
+    strip_all_ext && push!(desc, "strip_all_ext=true")
+    require_readable || push!(desc, "require_readable=false")
+    in_dir === nothing || push!(desc, "in_dir=" * repr(in_dir))
+
+    msg = "Associated index files must satisfy: " * join(desc, ", ")
+
+    return ValidatorSpec(
+        "V_file_has_index",
+        msg,
+        x -> begin
+            f = String(x)
+            cands = index_paths_for(f;
+                suffixes=suffixes,
+                replace_ext=replace_ext,
+                strip_all_ext=strip_all_ext,
+                in_dir=in_dir
+            )
+            isempty(cands) && return false
+            _index_mode_ok(cands, mode; require_readable=require_readable)
+        end
+    )
 end
 
 """
@@ -96,14 +110,20 @@ end
 
 Alias of [`V_file_has_index`](@ref) with `mode=:any`.
 """
-V_file_has_any_index(; kwargs...) = V_file_has_index(; mode=:any, kwargs...)
+function V_file_has_any_index(; kwargs...)
+    v = V_file_has_index(; mode=:any, kwargs...)
+    return ValidatorSpec("V_file_has_any_index", validator_message(v), validator_fn(v))
+end
 
 """
     V_file_has_all_indexes(; kwargs...)
 
 Alias of [`V_file_has_index`](@ref) with `mode=:all`.
 """
-V_file_has_all_indexes(; kwargs...) = V_file_has_index(; mode=:all, kwargs...)
+function V_file_has_all_indexes(; kwargs...)
+    v = V_file_has_index(; mode=:all, kwargs...)
+    return ValidatorSpec("V_file_has_all_indexes", validator_message(v), validator_fn(v))
+end
 
 """
     V_file_has_index_groups(groups; group_mode=:all, require_readable=true, strip_all_ext=false, in_dir=nothing)
@@ -119,27 +139,33 @@ function V_file_has_index_groups(groups;
     strip_all_ext::Bool=false,
     in_dir=nothing
 )
-    return x -> begin
-        f = String(x)
-        res = Bool[]
-        for g in groups
-            suffixes = hasproperty(g, :suffixes) ? Vector{String}(getproperty(g, :suffixes)) : String[]
-            replace_ext = hasproperty(g, :replace_ext) ? Vector{String}(getproperty(g, :replace_ext)) : String[]
-            mode = hasproperty(g, :mode) ? Symbol(getproperty(g, :mode)) : :any
-            cands = index_paths_for(f;
-                suffixes=suffixes,
-                replace_ext=replace_ext,
-                strip_all_ext=strip_all_ext,
-                in_dir=in_dir
-            )
-            push!(res, _index_mode_ok(cands, mode; require_readable=require_readable))
+    msg = "Index groups must satisfy group_mode=" * repr(group_mode)
+
+    return ValidatorSpec(
+        "V_file_has_index_groups",
+        msg,
+        x -> begin
+            f = String(x)
+            res = Bool[]
+            for g in groups
+                suffixes = hasproperty(g, :suffixes) ? Vector{String}(getproperty(g, :suffixes)) : String[]
+                replace_ext = hasproperty(g, :replace_ext) ? Vector{String}(getproperty(g, :replace_ext)) : String[]
+                mode = hasproperty(g, :mode) ? Symbol(getproperty(g, :mode)) : :any
+                cands = index_paths_for(f;
+                    suffixes=suffixes,
+                    replace_ext=replace_ext,
+                    strip_all_ext=strip_all_ext,
+                    in_dir=in_dir
+                )
+                push!(res, _index_mode_ok(cands, mode; require_readable=require_readable))
+            end
+            if group_mode == :all
+                all(res)
+            elseif group_mode == :any
+                any(res)
+            else
+                false
+            end
         end
-        if group_mode == :all
-            all(res)
-        elseif group_mode == :any
-            any(res)
-        else
-            false
-        end
-    end
+    )
 end

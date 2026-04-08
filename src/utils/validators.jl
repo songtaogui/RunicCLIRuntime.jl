@@ -1,3 +1,4 @@
+include("validators/type.jl")
 include("validators/flow.jl")
 include("validators/any.jl")
 include("validators/num.jl")
