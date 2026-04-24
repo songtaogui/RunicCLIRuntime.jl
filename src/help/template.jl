@@ -41,8 +41,6 @@ function build_help_template(options::HelpTemplateOptions)
     wd = isnothing(options.wrap_description) ? format.wrap_description : options.wrap_description
     we = isnothing(options.wrap_epilog) ? format.wrap_epilog : options.wrap_epilog
 
-    # Keep raw width preference in opts.
-    # nothing or <=0 means "auto" and will be resolved at render time.
     ww = isnothing(options.wrap_width) ? format.wrap_width : options.wrap_width
 
     opts = HelpFormatOptions(
@@ -71,6 +69,7 @@ function build_help_template(options::HelpTemplateOptions)
         show_option_metavar = isnothing(options.show_option_metavar) ? format.show_option_metavar : options.show_option_metavar,
         show_status_labels = isnothing(options.show_status_labels) ? format.show_status_labels : options.show_status_labels,
         show_constraints = isnothing(options.show_constraints) ? format.show_constraints : options.show_constraints,
+        show_relations = isnothing(options.show_relations) ? format.show_relations : options.show_relations,
 
         metavar_brackets = format.metavar_brackets,
         emphasize_item_by_kind = isnothing(options.emphasize_item_by_kind) ? format.emphasize_item_by_kind : options.emphasize_item_by_kind,
@@ -230,37 +229,20 @@ function build_help_template(options::HelpTemplateOptions)
         section_epilog = (io, def, path)->begin
             local _wrapw = _effective_wrap_width(io, opts.wrap_width)
 
-            if opts.show_constraints
-                local lines = String[]
+            if opts.show_constraints && opts.show_relations && !isempty(def.relations)
+                _paint(io, opts.title_constraints, theme.section_title, color_enabled, theme.reset)
+                println(io)
 
-                for grp in def.mutual_exclusion_groups
-                    isempty(grp) || push!(lines, "Mutually exclusive: " * join(string.(grp), ", "))
-                end
-
-                for grp in def.mutual_inclusion_groups
-                    isempty(grp) || push!(lines, "At least one required: " * join(string.(grp), ", "))
-                end
-
-                for rd in def.arg_requires
-                    isempty(rd.targets) || push!(lines, string(rd.anchor) * " requires one of: " * join(string.(rd.targets), ", "))
-                end
-
-                for cd in def.arg_conflicts
-                    isempty(cd.targets) || push!(lines, string(cd.anchor) * " conflicts with: " * join(string.(cd.targets), ", "))
-                end
-
-                if !isempty(lines)
-                    _paint(io, opts.title_constraints, theme.section_title, color_enabled, theme.reset)
-                    println(io)
-                    for line in lines
-                        if opts.wrap_description
-                            _print_wrapped(io, line, initial_indent=opts.indent_item, subsequent_indent=opts.indent_text, width=_wrapw)
-                        else
-                            println(io, " "^opts.indent_item * line)
-                        end
+                for rd in def.relations
+                    local line = _relation_def_string(rd)
+                    if opts.wrap_description
+                        _print_wrapped(io, line, initial_indent=opts.indent_item, subsequent_indent=opts.indent_text, width=_wrapw)
+                    else
+                        println(io, " "^opts.indent_item * line)
                     end
-                    opts.section_gap && println(io)
                 end
+
+                opts.section_gap && println(io)
             end
 
             isempty(def.epilog) && return
@@ -273,6 +255,7 @@ function build_help_template(options::HelpTemplateOptions)
         end
     )
 end
+
 
 """
     build_help_template(; kwargs...)

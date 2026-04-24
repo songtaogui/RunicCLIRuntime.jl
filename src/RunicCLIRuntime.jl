@@ -10,7 +10,9 @@ export ArgParseError, ArgHelpRequested, ArgHelpTemplate
 
 # ===== core/types.jl =====
 export ArgDef, SubcommandDef, CliDef
-export ArgRequiresDef, ArgConflictsDef, ArgGroupDef
+export RelationExpr, RelAll, RelAny, RelNot
+export ArgRelationDef, ArgGroupDef
+export relation_expr_members, relation_expr_string
 export ArgKind, AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI, AK_POS_REQUIRED, AK_POS_OPTIONAL, AK_POS_REST
 export clidef, CLIDEFREGISTRY
 
@@ -37,6 +39,7 @@ export generate_completion
 
 # ===== source/config_template.jl =====
 export generate_default_config, save_default_config
+
 # ===== utils/validators.jl =====
 export ValidatorSpec
 export validator, validator_fn, validator_message, validator_name, validator_resolve_message

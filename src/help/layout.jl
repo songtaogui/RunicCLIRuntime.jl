@@ -242,3 +242,36 @@ function _arg_group_membership(def::CliDef)
     end
     return belongs
 end
+
+function _relation_members_text(members::Vector{Symbol})::String
+    return join(string.(members), ", ")
+end
+
+function _relation_def_string(rd::ArgRelationDef)::String
+    if !isempty(rd.help)
+        return rd.help
+    end
+
+    if !isempty(rd.members)
+        if rd.kind in (:mutex, :mutually_exclusive, :exclusive, :xor)
+            return "Mutually exclusive: " * _relation_members_text(rd.members)
+        elseif rd.kind in (:at_least_one, :oneof, :anyof, :mutually_inclusive)
+            return "At least one required: " * _relation_members_text(rd.members)
+        else
+            return string(rd.kind, "(", _relation_members_text(rd.members), ")")
+        end
+    end
+
+    lhs = rd.lhs === nothing ? "<?>" : relation_expr_string(rd.lhs)
+    rhs = rd.rhs === nothing ? "<?>" : relation_expr_string(rd.rhs)
+
+    if rd.kind in (:require, :requires)
+        return string(lhs, " requires ", rhs)
+    elseif rd.kind in (:conflict, :conflicts)
+        return string(lhs, " conflicts with ", rhs)
+    elseif rd.kind in (:imply, :implies)
+        return string(lhs, " implies ", rhs)
+    else
+        return string(rd.kind, ": ", lhs, " -> ", rhs)
+    end
+end

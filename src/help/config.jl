@@ -385,6 +385,7 @@ struct HelpFormatOptions{F1,F2}
     show_option_metavar::Bool
     show_status_labels::Bool
     show_constraints::Bool
+    show_relations::Bool
 
     metavar_brackets::Tuple{String,String}
     emphasize_item_by_kind::Bool
@@ -423,6 +424,7 @@ function HelpFormatOptions(;
     show_option_metavar::Bool = true,
     show_status_labels::Bool = true,
     show_constraints::Bool = true,
+    show_relations::Bool = true,
 
     metavar_brackets::Tuple{String,String} = ("<", ">"),
     emphasize_item_by_kind::Bool = true,
@@ -462,6 +464,7 @@ function HelpFormatOptions(;
         show_option_metavar,
         show_status_labels,
         show_constraints,
+        show_relations,
 
         metavar_brackets,
         emphasize_item_by_kind,
@@ -688,6 +691,7 @@ Base.@kwdef struct HelpTemplateOptions
     show_option_metavar::Union{Nothing,Bool} = nothing
     show_status_labels::Union{Nothing,Bool} = nothing
     show_constraints::Union{Nothing,Bool} = nothing
+    show_relations::Union{Nothing,Bool} = nothing
 
     emphasize_item_by_kind::Union{Nothing,Bool} = nothing
 
