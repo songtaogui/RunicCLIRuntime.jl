@@ -1,5 +1,5 @@
-#FILEPATH: RunicCLIRuntime.jl
-module RunicCLIRuntime
+#FILEPATH: OracliRuntime.jl
+module OracliRuntime
 
 using TextWrap
 using Base: @kwdef

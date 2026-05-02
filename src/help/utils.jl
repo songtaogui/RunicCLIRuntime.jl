@@ -1,11 +1,11 @@
 
-@inline _paint(io::IO, s::AbstractString, color::AbstractString, enabled::Bool, reset::AbstractString) =
+@inline paint(io::IO, s::AbstractString, color::AbstractString, enabled::Bool, reset::AbstractString) =
     enabled ? print(io, color, s, reset) : print(io, s)
 
-@inline _styled_text(s::AbstractString, style::AbstractString, enabled::Bool, reset::AbstractString) =
+@inline styled_text(s::AbstractString, style::AbstractString, enabled::Bool, reset::AbstractString) =
     enabled ? string(style, s, reset) : String(s)
 
-@inline function _print_wrapped(io::IO, txt::AbstractString; initial_indent::Int=0, subsequent_indent::Int=0, width::Int=0)
+@inline function print_wrapped(io::IO, txt::AbstractString; initial_indent::Int=0, subsequent_indent::Int=0, width::Int=0)
     if width > 0
         println_wrapped(io, txt, initial_indent=initial_indent, subsequent_indent=subsequent_indent, width=width)
     else
@@ -13,14 +13,14 @@
     end
 end
 
-@inline function _rpad_display(s::AbstractString, target_width::Int)
+@inline function rpad_display(s::AbstractString, target_width::Int)
     w = textwidth(s)
     w >= target_width && return String(s)
     return String(s) * " "^(target_width - w)
 end
 
 
-function _wrap_inline_text_lines(txt::AbstractString, width::Int)
+function wrap_inline_text_lines(txt::AbstractString, width::Int)
     io = IOBuffer()
     if width > 0
         println_wrapped(io, txt, initial_indent=0, subsequent_indent=0, width=width)
@@ -33,7 +33,7 @@ function _wrap_inline_text_lines(txt::AbstractString, width::Int)
     return lines
 end
 
-@inline function _effective_wrap_width(io::IO, width::Union{Nothing,Int}; fallback::Int=80)
+@inline function effective_wrap_width(io::IO, width::Union{Nothing,Int}; fallback::Int=80)
     if width !== nothing && width > 0
         return width
     end

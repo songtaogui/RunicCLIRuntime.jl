@@ -94,20 +94,20 @@ function build_help_template(options::HelpTemplateOptions)
                 _name = "CLI"
             end
 
-            local _wrapw = _effective_wrap_width(io, opts.wrap_width)
+            local _wrapw = effective_wrap_width(io, opts.wrap_width)
 
             if isempty(def.version)
-                _paint(io, _name, theme.usage_title, color_enabled, theme.reset)
+                paint(io, _name, theme.usage_title, color_enabled, theme.reset)
                 println(io)
             else
                 local vlabel = isempty(opts.title_version) ? "" : opts.title_version
-                _paint(io, string(_name, " (", vlabel, def.version, ")"), theme.usage_title, color_enabled, theme.reset)
+                paint(io, string(_name, " (", vlabel, def.version, ")"), theme.usage_title, color_enabled, theme.reset)
                 println(io)
             end
 
             if !isempty(def.description)
                 if opts.wrap_description
-                    _print_wrapped(io, def.description, initial_indent=0, subsequent_indent=0, width=_wrapw)
+                    print_wrapped(io, def.description, initial_indent=0, subsequent_indent=0, width=_wrapw)
                 else
                     println(io, def.description)
                 end
@@ -117,8 +117,8 @@ function build_help_template(options::HelpTemplateOptions)
         end,
 
         section_usage = (io, def, path)->begin
-            local u = isempty(def.usage) ? _help_usage_fallback(def, path) : def.usage
-            _paint(io, opts.title_usage, theme.section_title, color_enabled, theme.reset)
+            local u = isempty(def.usage) ? help_usage_fallback(def, path) : def.usage
+            paint(io, opts.title_usage, theme.section_title, color_enabled, theme.reset)
             println(io)
             println(io, u)
             opts.section_gap && println(io)
@@ -129,25 +129,25 @@ function build_help_template(options::HelpTemplateOptions)
         section_description = (io, def, path)->nothing,
 
         section_positionals = (io, def, path)->begin
-            grouped = _arg_group_membership(def)
+            grouped = arg_group_membership(def)
             pos = filter(a -> a.kind in (AK_POS_REQUIRED, AK_POS_OPTIONAL, AK_POS_REST) && !haskey(grouped, a.name), def.args)
             isempty(pos) && return
 
-            _paint(io, opts.title_positionals, theme.section_title, color_enabled, theme.reset)
+            paint(io, opts.title_positionals, theme.section_title, color_enabled, theme.reset)
             println(io)
 
-            specs = [_format_positional_spec(a, opts, theme, color_enabled) for a in pos]
-            spec_width = _compute_item_column_width(pos, specs, opts)
-            local _wrapw = _effective_wrap_width(io, opts.wrap_width)
+            specs = [format_positional_spec(a, opts, theme, color_enabled) for a in pos]
+            spec_width = compute_item_column_width(pos, specs, opts)
+            local _wrapw = effective_wrap_width(io, opts.wrap_width)
 
             for (a, spec) in zip(pos, specs)
-                _render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
+                render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
             end
             opts.section_gap && println(io)
         end,
 
         section_options = (io, def, path)->begin
-            grouped = _arg_group_membership(def)
+            grouped = arg_group_membership(def)
             opt = filter(a -> a.kind in (AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI) && !haskey(grouped, a.name), def.args)
 
             auto_help = ArgDef(
@@ -175,15 +175,15 @@ function build_help_template(options::HelpTemplateOptions)
 
             isempty(opt) && return
 
-            _paint(io, opts.title_options, theme.section_title, color_enabled, theme.reset)
+            paint(io, opts.title_options, theme.section_title, color_enabled, theme.reset)
             println(io)
 
-            specs = [_format_option_spec(a, opts, theme, color_enabled) for a in opt]
-            spec_width = _compute_item_column_width(opt, specs, opts)
-            local _wrapw = _effective_wrap_width(io, opts.wrap_width)
+            specs = [format_option_spec(a, opts, theme, color_enabled) for a in opt]
+            spec_width = compute_item_column_width(opt, specs, opts)
+            local _wrapw = effective_wrap_width(io, opts.wrap_width)
 
             for (a, spec) in zip(opt, specs)
-                _render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
+                render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
             end
             opts.section_gap && println(io)
         end,
@@ -194,49 +194,49 @@ function build_help_template(options::HelpTemplateOptions)
                     members = ArgDef[a for a in def.args if a.name in Set(g.members)]
                     isempty(members) && continue
 
-                    _paint(io, g.title * ":", theme.section_title, color_enabled, theme.reset)
+                    paint(io, g.title * ":", theme.section_title, color_enabled, theme.reset)
                     println(io)
 
                     specs = [
                         a.kind in (AK_FLAG, AK_COUNT, AK_OPTION, AK_OPTION_MULTI) ?
-                        _format_option_spec(a, opts, theme, color_enabled) :
-                        _format_positional_spec(a, opts, theme, color_enabled)
+                        format_option_spec(a, opts, theme, color_enabled) :
+                        format_positional_spec(a, opts, theme, color_enabled)
                         for a in members
                     ]
-                    spec_width = _compute_item_column_width(members, specs, opts)
-                    local _wrapw = _effective_wrap_width(io, opts.wrap_width)
+                    spec_width = compute_item_column_width(members, specs, opts)
+                    local _wrapw = effective_wrap_width(io, opts.wrap_width)
                     for (a, spec) in zip(members, specs)
-                        _render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
+                        render_item_inline(io, a, spec, spec_width, opts, theme, color_enabled, _wrapw)
                     end
                     opts.section_gap && println(io)
                 end
             end
 
             isempty(def.subcommands) && return
-            _paint(io, opts.title_subcommands, theme.section_title, color_enabled, theme.reset)
+            paint(io, opts.title_subcommands, theme.section_title, color_enabled, theme.reset)
             println(io)
 
             w = maximum(textwidth(s.name) for s in def.subcommands)
             for s in def.subcommands
                 print(io, " "^opts.indent_item)
-                name_cell = _rpad_display(s.name, w + opts.subcommand_col_gap)
-                _paint(io, name_cell, theme.item_name, color_enabled, theme.reset)
+                name_cell = rpad_display(s.name, w + opts.subcommand_col_gap)
+                paint(io, name_cell, theme.item_name, color_enabled, theme.reset)
                 println(io, s.description)
             end
             opts.section_gap && println(io)
         end,
 
         section_epilog = (io, def, path)->begin
-            local _wrapw = _effective_wrap_width(io, opts.wrap_width)
+            local _wrapw = effective_wrap_width(io, opts.wrap_width)
 
             if opts.show_constraints && opts.show_relations && !isempty(def.relations)
-                _paint(io, opts.title_constraints, theme.section_title, color_enabled, theme.reset)
+                paint(io, opts.title_constraints, theme.section_title, color_enabled, theme.reset)
                 println(io)
 
                 for rd in def.relations
-                    local line = _relation_def_string(rd)
+                    local line = relation_def_string(rd)
                     if opts.wrap_description
-                        _print_wrapped(io, line, initial_indent=opts.indent_item, subsequent_indent=opts.indent_text, width=_wrapw)
+                        print_wrapped(io, line, initial_indent=opts.indent_item, subsequent_indent=opts.indent_text, width=_wrapw)
                     else
                         println(io, " "^opts.indent_item * line)
                     end
@@ -247,7 +247,7 @@ function build_help_template(options::HelpTemplateOptions)
 
             isempty(def.epilog) && return
             if opts.wrap_epilog
-                _print_wrapped(io, def.epilog, initial_indent=0, subsequent_indent=0, width=_wrapw)
+                print_wrapped(io, def.epilog, initial_indent=0, subsequent_indent=0, width=_wrapw)
             else
                 println(io, def.epilog)
             end

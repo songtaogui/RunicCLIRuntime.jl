@@ -1,4 +1,3 @@
-#FILEPATH: validators/any.jl
 """
     V_any_oneof(xs)
     V_any_oneof(x, xs...)

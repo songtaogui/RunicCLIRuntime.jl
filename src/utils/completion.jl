@@ -1,4 +1,4 @@
-function _all_flags(def::CliDef)
+function all_flags(def::CliDef)
     fs = String[]
     for a in def.args
         append!(fs, a.flags)
@@ -35,7 +35,7 @@ Current support status:
 This helper is intended for packaging/install-time completion generation.
 """
 function generate_completion(def::CliDef; shell::Symbol=:bash, prog::String=isempty(def.cmd_name) ? "cmd" : def.cmd_name)::String
-    flags = join(_all_flags(def), " ")
+    flags = join(all_flags(def), " ")
     subs = join([s.name for s in def.subcommands], " ")
 
     if shell == :bash

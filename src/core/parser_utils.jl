@@ -1,33 +1,33 @@
-@inline _parse_value(::Type{String}, s::String, ::String) = s
-@inline _parse_value(::Type{Symbol}, s::String, ::String) = Symbol(s)
-@inline _parse_value(::Type{Bool}, s::String, name::String) = begin
+@inline parse_value(::Type{String}, s::String, ::String) = s
+@inline parse_value(::Type{Symbol}, s::String, ::String) = Symbol(s)
+@inline parse_value(::Type{Bool}, s::String, name::String) = begin
     x = lowercase(strip(s))
     if x in ("1","true","t","yes","y","on")
         true
     elseif x in ("0","false","f","no","n","off")
         false
     else
-        _throw_arg_error("Invalid boolean value for $name: $s")
+        throw_arg_error("Invalid boolean value for $name: $s")
     end
 end
 
-@inline function _parse_value(::Type{T}, s::String, name::String) where {T<:Integer}
+@inline function parse_value(::Type{T}, s::String, name::String) where {T<:Integer}
     try
         return parse(T, s)
     catch
-        _throw_arg_error("Invalid integer value for $name: $s")
+        throw_arg_error("Invalid integer value for $name: $s")
     end
 end
 
-@inline function _parse_value(::Type{T}, s::String, name::String) where {T<:AbstractFloat}
+@inline function parse_value(::Type{T}, s::String, name::String) where {T<:AbstractFloat}
     try
         return parse(T, s)
     catch
-        _throw_arg_error("Invalid floating value for $name: $s")
+        throw_arg_error("Invalid floating value for $name: $s")
     end
 end
 
-@inline function _parse_value(::Type{T}, s::String, name::String) where {T}
+@inline function parse_value(::Type{T}, s::String, name::String) where {T}
     if applicable(Base.tryparse, T, s)
         tp = Base.tryparse(T, s)
         tp !== nothing && return tp
@@ -46,22 +46,22 @@ end
         return T(s)
     catch e
         if parse_err === nothing
-            _throw_arg_error("Invalid value for $name (type $(T)): $s ($(sprint(showerror, e)))")
+            throw_arg_error("Invalid value for $name (type $(T)): $s ($(sprint(showerror, e)))")
         else
-            _throw_arg_error("Invalid value for $name (type $(T)): $s (parse: $(sprint(showerror, parse_err)); ctor: $(sprint(showerror, e)))")
+            throw_arg_error("Invalid value for $name (type $(T)): $s (parse: $(sprint(showerror, parse_err)); ctor: $(sprint(showerror, e)))")
         end
     end
 end
 
-@inline function _convert_default(::Type{T}, v, name::String) where {T}
+@inline function convert_default(::Type{T}, v, name::String) where {T}
     try
         return v isa T ? v : convert(T, v)
     catch e
-        _throw_arg_error("Invalid default value for $name: expected $T, got $(typeof(v)) ($(sprint(showerror, e)))")
+        throw_arg_error("Invalid default value for $name: expected $T, got $(typeof(v)) ($(sprint(showerror, e)))")
     end
 end
 
-function _build_main_flag_sets(argdefs::Vector{ArgDef})
+function build_main_flag_sets(argdefs::Vector{ArgDef})
     flags_need_value = Set{String}()
     flags_no_value = Set{String}()
 
@@ -80,7 +80,7 @@ function _build_main_flag_sets(argdefs::Vector{ArgDef})
     return flags_need_value, flags_no_value
 end
 
-function _extract_global_options(
+function extract_global_options(
     argv::Vector{String},
     sub_idx::Int,
     flags_need_value::Set{String},
@@ -121,9 +121,9 @@ function _extract_global_options(
             if head in flags_need_value
                 push!(main_tokens, tok)
                 if !has_inline_value
-                    i == length(argv) && _throw_arg_error(_msg_option_requires_value(tok))
+                    i == length(argv) && throw_arg_error(msg_option_requires_value(tok))
                     nxt = argv[i+1]
-                    nxt == "--" && _throw_arg_error(_msg_option_requires_value(tok))
+                    nxt == "--" && throw_arg_error(msg_option_requires_value(tok))
                     push!(main_tokens, nxt)
                     i += 2
                 else
@@ -136,14 +136,14 @@ function _extract_global_options(
                 continue
             else
                 handled, expanded, tail_requires_value, all_known =
-                    _analyze_short_bundle(head, flags_need_value, flags_no_value; strict_unknown_option=false)
+                    analyze_short_bundle(head, flags_need_value, flags_no_value; strict_unknown_option=false)
 
                 if handled && all_known
                     append!(main_tokens, expanded)
                     if tail_requires_value
-                        i == length(argv) && _throw_arg_error(_msg_option_requires_value(expanded[end]))
+                        i == length(argv) && throw_arg_error(msg_option_requires_value(expanded[end]))
                         nxt = argv[i+1]
-                        nxt == "--" && _throw_arg_error(_msg_option_requires_value(expanded[end]))
+                        nxt == "--" && throw_arg_error(msg_option_requires_value(expanded[end]))
                         push!(main_tokens, nxt)
                         i += 2
                     else

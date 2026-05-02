@@ -1,4 +1,4 @@
-function _default_value_for_arg(a::ArgDef)
+function default_value_for_arg(a::ArgDef)
     if a.default !== nothing
         return a.default
     end
@@ -17,12 +17,12 @@ function generate_default_config(def::CliDef)::String
     d = Dict{String,Any}()
 
     for a in def.args
-        d[string(a.name)] = _default_value_for_arg(a)
+        d[string(a.name)] = default_value_for_arg(a)
     end
 
     for s in def.subcommands
         for a in s.args
-            d["$(s.name).$(a.name)"] = _default_value_for_arg(a)
+            d["$(s.name).$(a.name)"] = default_value_for_arg(a)
         end
         if !isempty(s.version)
             d["$(s.name).version"] = s.version
@@ -44,7 +44,7 @@ end
 
 function save_default_config(path::AbstractString, def::CliDef; force::Bool=false)
     if isfile(path) && !force
-        _throw_arg_error("Config file already exists: $(path). Use force=true to overwrite.")
+        throw_arg_error("Config file already exists: $(path). Use force=true to overwrite.")
     end
     open(path, "w") do io
         print(io, generate_default_config(def))

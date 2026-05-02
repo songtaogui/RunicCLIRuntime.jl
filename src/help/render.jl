@@ -7,7 +7,7 @@ Render a complete help message for a CLI definition into a string.
 `render_help` is the high-level formatter that takes a [`CliDef`](@ref), applies
 an [`ArgHelpTemplate`](@ref), and returns the final help text as a `String`.
 
-This function does not print directly. It is used internally by RunicCLI when
+This function does not print directly. It is used internally by Oracli when
 servicing help requests, and it can also be used manually for documentation
 generation, testing, or custom UI flows.
 

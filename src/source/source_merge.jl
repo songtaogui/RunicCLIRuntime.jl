@@ -16,15 +16,15 @@ See also [`merge_cli_sources`](@ref) for how loaded values are translated into C
 """
 function load_config_file(path::AbstractString)::Dict{String,Any}
     ext = lowercase(splitext(String(path))[2])
-    ext == ".toml" || _throw_arg_error("Unsupported config file extension: $(ext). Only .toml is supported")
+    ext == ".toml" || throw_arg_error("Unsupported config file extension: $(ext). Only .toml is supported")
     return Dict{String,Any}(string(k)=>v for (k,v) in pairs(TOML.parsefile(path)))
 end
 
 
 
 
-function _arg_present_cli(argv::Vector{String}, a::ArgDef)::Bool
-    toks = _split_arguments(copy(argv))
+function arg_present_cli(argv::Vector{String}, a::ArgDef)::Bool
+    toks = split_arguments(copy(argv))
     dd = findfirst(==("--"), toks)
     pre = isnothing(dd) ? toks : toks[1:dd-1]
 
@@ -35,13 +35,13 @@ function _arg_present_cli(argv::Vector{String}, a::ArgDef)::Bool
     end
 end
 
-function _get_cfg(cfg::AbstractDict, name::Symbol)
+function get_cfg(cfg::AbstractDict, name::Symbol)
     haskey(cfg, string(name)) && return cfg[string(name)]
     haskey(cfg, name) && return cfg[name]
     return nothing
 end
 
-function _append_option_tokens!(out::Vector{String}, a::ArgDef, v)
+function append_option_tokens!(out::Vector{String}, a::ArgDef, v)
     f = isempty(a.flags) ? "" : a.flags[end]
     if a.kind == AK_FLAG
         Bool(v) && push!(out, f)
@@ -111,16 +111,16 @@ function merge_cli_sources(
 
     for a in argdefs
         if a.kind in (AK_OPTION, AK_OPTION_MULTI, AK_FLAG, AK_COUNT)
-            _arg_present_cli(out, a) && continue
+            arg_present_cli(out, a) && continue
 
-            cv = _get_cfg(config, a.name)
+            cv = get_cfg(config, a.name)
             if cv !== nothing
-                _append_option_tokens!(out, a, cv)
+                append_option_tokens!(out, a, cv)
                 continue
             end
 
             if a.env !== nothing && haskey(env, a.env)
-                _append_option_tokens!(out, a, env[a.env])
+                append_option_tokens!(out, a, env[a.env])
             end
         end
     end
@@ -129,7 +129,7 @@ function merge_cli_sources(
     if !isempty(posdefs)
         push!(out, "--")
         for a in posdefs
-            cv = _get_cfg(config, a.name)
+            cv = get_cfg(config, a.name)
             if cv === nothing
                 if a.env !== nothing && haskey(env, a.env)
                     cv = env[a.env]

@@ -1,4 +1,4 @@
-function _help_usage_fallback(def::CliDef, path::String)
+function help_usage_fallback(def::CliDef, path::String)
     cmd = isempty(path) ? def.cmd_name : path
     parts = String[cmd]
 
@@ -13,7 +13,7 @@ function _help_usage_fallback(def::CliDef, path::String)
     return join(parts, " ")
 end
 
-function _type_text(a::ArgDef, opts::HelpFormatOptions)
+function type_text(a::ArgDef, opts::HelpFormatOptions)
     if a.kind == AK_FLAG
         return "Bool"
     elseif a.kind == AK_COUNT
@@ -23,8 +23,8 @@ function _type_text(a::ArgDef, opts::HelpFormatOptions)
     end
 end
 
-function _metavar_text(a::ArgDef, opts::HelpFormatOptions)
-    Ttxt = _type_text(a, opts)
+function metavar_text(a::ArgDef, opts::HelpFormatOptions)
+    Ttxt = type_text(a, opts)
     l, r = opts.metavar_brackets
 
     if a.kind == AK_POS_REST
@@ -36,7 +36,7 @@ function _metavar_text(a::ArgDef, opts::HelpFormatOptions)
     end
 end
 
-function _item_style_for_arg(a::ArgDef, theme::HelpTheme, opts::HelpFormatOptions)
+function item_style_for_arg(a::ArgDef, theme::HelpTheme, opts::HelpFormatOptions)
     if !opts.emphasize_item_by_kind
         return theme.item_name
     end
@@ -51,21 +51,21 @@ function _item_style_for_arg(a::ArgDef, theme::HelpTheme, opts::HelpFormatOption
     end
 end
 
-function _label_render(text::String, style::HelpLabelStyle, color::String, theme::HelpTheme, color_enabled::Bool)
+function label_render(text::String, style::HelpLabelStyle, color::String, theme::HelpTheme, color_enabled::Bool)
     if style == HLS_HIDDEN
         return ""
     elseif style == HLS_PLAIN
         return text
     elseif style == HLS_BOLD
-        return _styled_text(text, theme.bold, color_enabled, theme.reset)
+        return styled_text(text, theme.bold, color_enabled, theme.reset)
     else
-        return _styled_text(text, color, color_enabled, theme.reset)
+        return styled_text(text, color, color_enabled, theme.reset)
     end
 end
 
-function _format_positional_spec(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function format_positional_spec(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
     n = isempty(a.help_name) ? String(a.name) : a.help_name
-    mv = _metavar_text(a, opts)
+    mv = metavar_text(a, opts)
 
     if a.kind == AK_POS_REST
         return string(n, " ", mv)
@@ -76,7 +76,7 @@ function _format_positional_spec(a::ArgDef, opts::HelpFormatOptions, theme::Help
     end
 end
 
-function _format_option_spec(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function format_option_spec(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
     names = join(a.flags, ", ")
 
     if !opts.show_option_metavar
@@ -84,19 +84,19 @@ function _format_option_spec(a::ArgDef, opts::HelpFormatOptions, theme::HelpThem
     end
 
     if a.kind in (AK_OPTION, AK_OPTION_MULTI)
-        mv = _metavar_text(a, opts)
+        mv = metavar_text(a, opts)
         return isempty(mv) ? names : string(names, " ", mv)
     end
 
     return names
 end
 
-function _status_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function status_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
     parts = String[]
 
     if opts.show_status_labels
         if (a.kind == AK_OPTION && a.required) || a.kind == AK_POS_REQUIRED
-            lbl = _label_render("Required", opts.required_style, theme.required_mark, theme, color_enabled)
+            lbl = label_render("Required", opts.required_style, theme.required_mark, theme, color_enabled)
             isempty(lbl) || push!(parts, lbl)
         end
     end
@@ -104,13 +104,13 @@ function _status_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, col
     return parts
 end
 
-function _meta_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function meta_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
     parts = String[]
 
-    append!(parts, _status_parts(a, opts, theme, color_enabled))
+    append!(parts, status_parts(a, opts, theme, color_enabled))
 
     if a.kind == AK_COUNT && opts.count_style != HLS_HIDDEN && !isempty(a.flags)
-        ctxt = _label_render("Count occurrences", opts.count_style, theme.meta, theme, color_enabled)
+        ctxt = label_render("Count occurrences", opts.count_style, theme.meta, theme, color_enabled)
         isempty(ctxt) || push!(parts, ctxt)
     end
 
@@ -129,10 +129,10 @@ function _meta_parts(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color
     return parts
 end
 
-function _build_inline_description(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
+function build_inline_description(a::ArgDef, opts::HelpFormatOptions, theme::HelpTheme, color_enabled::Bool)
     segs = String[]
 
-    meta = _meta_parts(a, opts, theme, color_enabled)
+    meta = meta_parts(a, opts, theme, color_enabled)
     if !isempty(meta)
         push!(segs, join(meta, ". ") * ".")
     end
@@ -144,7 +144,7 @@ function _build_inline_description(a::ArgDef, opts::HelpFormatOptions, theme::He
     return join(segs, " ")
 end
 
-function _compute_item_column_width(args::Vector{ArgDef}, specs::Vector{String}, opts::HelpFormatOptions)
+function compute_item_column_width(args::Vector{ArgDef}, specs::Vector{String}, opts::HelpFormatOptions)
     isempty(specs) && return opts.item_column_width
 
     w = maximum(textwidth(s) for s in specs)
@@ -153,7 +153,7 @@ function _compute_item_column_width(args::Vector{ArgDef}, specs::Vector{String},
     return w
 end
 
-function _render_item_inline(
+function render_item_inline(
     io::IO,
     a::ArgDef,
     spec::String,
@@ -164,9 +164,9 @@ function _render_item_inline(
     wrap_width::Int
 )
     left_pad = " "^opts.indent_item
-    desc = _build_inline_description(a, opts, theme, color_enabled)
+    desc = build_inline_description(a, opts, theme, color_enabled)
 
-    spec_cell = _rpad_display(spec, spec_width)
+    spec_cell = rpad_display(spec, spec_width)
     gap = " "^opts.item_desc_gap
 
     desc_width = wrap_width > 0 ? max(10, wrap_width - opts.indent_item - spec_width - opts.item_desc_gap) : 0
@@ -213,11 +213,11 @@ function _render_item_inline(
     isempty(desc_lines) && (desc_lines = [""])
 
     print(io, left_pad)
-    _paint(io, spec_cell, _item_style_for_arg(a, theme, opts), color_enabled, theme.reset)
+    paint(io, spec_cell, item_style_for_arg(a, theme, opts), color_enabled, theme.reset)
 
     if !isempty(desc_lines[1])
         print(io, gap)
-        _paint(io, desc_lines[1], theme.inline_description, color_enabled, theme.reset)
+        paint(io, desc_lines[1], theme.inline_description, color_enabled, theme.reset)
     end
     println(io)
 
@@ -226,14 +226,14 @@ function _render_item_inline(
         for desc_line in desc_lines[2:end]
             print(io, cont_prefix)
             if !isempty(desc_line)
-                _paint(io, desc_line, theme.inline_description, color_enabled, theme.reset)
+                paint(io, desc_line, theme.inline_description, color_enabled, theme.reset)
             end
             println(io)
         end
     end
 end
 
-function _arg_group_membership(def::CliDef)
+function arg_group_membership(def::CliDef)
     belongs = Dict{Symbol,String}()
     for g in def.arg_groups
         for s in g.members
@@ -243,22 +243,22 @@ function _arg_group_membership(def::CliDef)
     return belongs
 end
 
-function _relation_members_text(members::Vector{Symbol})::String
+function relation_members_text(members::Vector{Symbol})::String
     return join(string.(members), ", ")
 end
 
-function _relation_def_string(rd::ArgRelationDef)::String
+function relation_def_string(rd::ArgRelationDef)::String
     if !isempty(rd.help)
         return rd.help
     end
 
     if !isempty(rd.members)
         if rd.kind in (:mutex, :mutually_exclusive, :exclusive, :xor)
-            return "Mutually exclusive: " * _relation_members_text(rd.members)
+            return "Mutually exclusive: " * relation_members_text(rd.members)
         elseif rd.kind in (:at_least_one, :oneof, :anyof, :mutually_inclusive)
-            return "At least one required: " * _relation_members_text(rd.members)
+            return "At least one required: " * relation_members_text(rd.members)
         else
-            return string(rd.kind, "(", _relation_members_text(rd.members), ")")
+            return string(rd.kind, "(", relation_members_text(rd.members), ")")
         end
     end
 

@@ -1,7 +1,7 @@
-function _split_multiflag(s::AbstractString)::Vector{String}
-    isascii(s) || _throw_arg_error(_msg_invalid_short_option_bundle_non_ascii(s))
-    startswith(s, "-") || _throw_arg_error(_msg_invalid_short_option_bundle(s))
-    length(s) > 2 || _throw_arg_error(_msg_invalid_short_option_bundle(s))
+function split_multiflag(s::AbstractString)::Vector{String}
+    isascii(s) || throw_arg_error(msg_invalid_short_option_bundle_non_ascii(s))
+    startswith(s, "-") || throw_arg_error(msg_invalid_short_option_bundle(s))
+    length(s) > 2 || throw_arg_error(msg_invalid_short_option_bundle(s))
 
     out = String[]
     max_i = lastindex(s)
@@ -12,37 +12,37 @@ function _split_multiflag(s::AbstractString)::Vector{String}
             push!(out, "-$c")
             i = nextind(s, i)
         else
-            _throw_arg_error(_msg_invalid_short_option_bundle(s))
+            throw_arg_error(msg_invalid_short_option_bundle(s))
         end
     end
     out
 end
 
-@inline _is_short_bundle_candidate(head::AbstractString) =
+@inline is_short_bundle_candidate(head::AbstractString) =
     length(head) > 2 &&
     startswith(head, "-") &&
     !startswith(head, "--") &&
     isascii(head[2]) &&
     isletter(head[2])
 
-function _analyze_short_bundle(
+function analyze_short_bundle(
     tok::AbstractString,
     flags_need_value::Set{String},
     flags_no_value::Set{String};
     strict_unknown_option::Bool=true
 )::Tuple{Bool,Vector{String},Bool,Bool}
-    if !_is_short_bundle_candidate(tok)
+    if !is_short_bundle_candidate(tok)
         return (false, String[], false, false)
     end
 
-    expanded = _split_multiflag(tok)
+    expanded = split_multiflag(tok)
     tail_requires_value = false
     all_known = true
 
     for (k, f) in enumerate(expanded)
         if f in flags_need_value
             if k != length(expanded)
-                _throw_arg_error(_msg_bundle_option_requiring_value_must_be_last(tok))
+                throw_arg_error(msg_bundle_option_requiring_value_must_be_last(tok))
             end
             tail_requires_value = true
         elseif f in flags_no_value
@@ -58,7 +58,7 @@ function _analyze_short_bundle(
     return (true, expanded, tail_requires_value, all_known)
 end
 
-function _split_arguments(args::Vector{String}; allow_short_bundle::Bool=true)::Vector{String}
+function split_arguments(args::Vector{String}; allow_short_bundle::Bool=true)::Vector{String}
     out = String[]
     passthrough = false
     for arg in args
@@ -74,17 +74,17 @@ function _split_arguments(args::Vector{String}; allow_short_bundle::Bool=true)::
         if startswith(arg, "-")
             parts = split(arg, '=', limit=2)
             head = parts[1]
-            is_short_bundle = allow_short_bundle && _is_short_bundle_candidate(head)
+            is_short_bundle = allow_short_bundle && is_short_bundle_candidate(head)
 
             if is_short_bundle
                 if length(parts) == 2
-                    _throw_arg_error(_msg_ambiguous_short_bundle_with_equals(arg))
+                    throw_arg_error(msg_ambiguous_short_bundle_with_equals(arg))
                 end
                 if length(head) > 2 && isletter(head[2]) && (tryparse(Float64, head[3:end]) !== nothing)
                     push!(out, head[1:2])
                     push!(out, head[3:end])
                 else
-                    append!(out, _split_multiflag(head))
+                    append!(out, split_multiflag(head))
                 end
             else
                 append!(out, String.(parts))
@@ -96,8 +96,8 @@ function _split_arguments(args::Vector{String}; allow_short_bundle::Bool=true)::
     out
 end
 
-function _has_help_flag_before_dd(args::Vector{String})::Bool
-    toks = _split_arguments(copy(args))
+function has_help_flag_before_dd(args::Vector{String})::Bool
+    toks = split_arguments(copy(args))
     dd = findfirst(==("--"), toks)
     if !isnothing(dd)
         toks = toks[1:dd-1]
@@ -105,8 +105,8 @@ function _has_help_flag_before_dd(args::Vector{String})::Bool
     any(t -> t == "-h" || t == "--help", toks)
 end
 
-function _has_version_flag_before_dd(args::Vector{String})::Bool
-    toks = _split_arguments(copy(args))
+function has_version_flag_before_dd(args::Vector{String})::Bool
+    toks = split_arguments(copy(args))
     dd = findfirst(==("--"), toks)
     if !isnothing(dd)
         toks = toks[1:dd-1]
@@ -114,7 +114,7 @@ function _has_version_flag_before_dd(args::Vector{String})::Bool
     any(t -> t == "-V" || t == "--version", toks)
 end
 
-function _locate_subcommand(
+function locate_subcommand(
     argv::Vector{String},
     sub_names::Vector{String},
     flags_need_value::Set{String},
@@ -154,7 +154,7 @@ function _locate_subcommand(
                 continue
             else
                 handled, _, tail_requires_value, all_known =
-                    _analyze_short_bundle(head, flags_need_value, flags_no_value; strict_unknown_option=strict_unknown_option)
+                    analyze_short_bundle(head, flags_need_value, flags_no_value; strict_unknown_option=strict_unknown_option)
 
                 if handled
                     if !all_known && strict_unknown_option
